@@ -16,9 +16,10 @@ from generator import Generator
 
 class VAE(Generator):
 
-    def __init__(self, hidden_size, batch_size, learning_rate):
+    def __init__(self, hidden_size, batch_size, learning_rate, img_shape):
+        self.img_shape = img_shape
         self.input_tensor = tf.placeholder(
-            tf.float32, [None, 28 * 28])
+            tf.float32, [None, np.product(img_shape)])
 
         with arg_scope([layers.conv2d, layers.conv2d_transpose],
                        activation_fn=tf.nn.elu,

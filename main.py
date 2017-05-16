@@ -6,12 +6,10 @@ import math
 import os
 
 import numpy as np
-import scipy.misc
 import tensorflow as tf
 from tensorflow.contrib import layers
 from tensorflow.contrib import losses
 from tensorflow.contrib.framework import arg_scope
-from scipy.misc import imsave
 from tensorflow.examples.tutorials.mnist import input_data
 
 from deconv import deconv2d
@@ -19,6 +17,7 @@ from progressbar import ETA, Bar, Percentage, ProgressBar
 
 from vae import VAE
 from gan import GAN
+from dataset import load_dataset
 
 flags = tf.flags
 logging = tf.logging
@@ -28,16 +27,26 @@ flags.DEFINE_integer("updates_per_epoch", 1000, "number of updates per epoch")
 flags.DEFINE_integer("max_epoch", 100, "max epoch")
 flags.DEFINE_float("learning_rate", 1e-2, "learning rate")
 flags.DEFINE_string("working_directory", "", "")
+flags.DEFINE_string("dataset", "MNIST", "subdirectory of working_directory containing image data")
+flags.DEFINE_string("img_extension", "*", "Only load files from the dataset directory " +
+        "having this extension (e.g. 'png', 'jpg'). '*' tries to load all files.")
+flags.DEFINE_integer("channels", 0, "How many colour channels to read. 1: grayscale, "+
+        "3: RGB, 4: RGBA, 0: infer automatically")
 flags.DEFINE_integer("hidden_size", 128, "size of the hidden VAE unit")
 flags.DEFINE_string("model", "gan", "gan or vae")
 
 FLAGS = flags.FLAGS
 
 if __name__ == "__main__":
-    data_directory = os.path.join(FLAGS.working_directory, "MNIST")
-    if not os.path.exists(data_directory):
-        os.makedirs(data_directory)
-    mnist = input_data.read_data_sets(data_directory, one_hot=True)
+    data_directory = os.path.join(FLAGS.working_directory, FLAGS.dataset)
+    if FLAGS.dataset == 'MNIST':
+        if not os.path.exists(data_directory):
+            os.makedirs(data_directory)
+        dataset = input_data.read_data_sets(data_directory, one_hot=True).train
+    else:
+        dataset = load_dataset(FLAGS.dataset, FLAGS.img_extension, FLAGS.channels)
+
+    img = dataset.sample_img
 
     assert FLAGS.model in ['vae', 'gan']
     if FLAGS.model == 'vae':
